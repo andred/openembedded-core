@@ -1970,12 +1970,13 @@ python package_do_pkgconfig () {
             fd.close()
 }
 
+PACKAGE_LIBDEPS_EXTENSIONS ?= ".shlibdeps .pcdeps .clilibdeps"
 def read_libdep_files(d):
     pkglibdeps = {}
     packages = d.getVar('PACKAGES').split()
     for pkg in packages:
         pkglibdeps[pkg] = {}
-        for extension in ".shlibdeps", ".pcdeps", ".clilibdeps":
+        for extension in d.getVar('PACKAGE_LIBDEPS_EXTENSIONS').split():
             depsfile = d.expand("${PKGDEST}/" + pkg + extension)
             if os.access(depsfile, os.R_OK):
                 fd = open(depsfile)
@@ -2156,13 +2157,19 @@ PACKAGEBUILDPKGD ?= " \
 PACKAGESPLITFUNCS ?= " \
                 package_do_split_locales \
                 populate_packages"
+# Functions that generate dependencies based on
+# elf NEEDED, pkgconfig, etc. This can be extended
+# to handle other file types.
+PACKAGE_DEP_FUNCS ?= " \
+                package_do_filedeps \
+                package_do_shlibs \
+                package_do_pkgconfig \
+                "
 # Functions which process metadata based on split packages
 PACKAGEFUNCS += " \
                 package_fixsymlinks \
                 package_name_hook \
-                package_do_filedeps \
-                package_do_shlibs \
-                package_do_pkgconfig \
+                ${PACKAGE_DEP_FUNCS} \
                 read_shlibdeps \
                 package_depchains \
                 emit_pkgdata"
